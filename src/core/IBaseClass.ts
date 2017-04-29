@@ -1,0 +1,3 @@
+interface IBaseClass {
+    name:string;
+}

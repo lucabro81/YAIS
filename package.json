@@ -1,7 +1,7 @@
 {
-  "name": "yais-infinite-scroll",
+  "name": "YAIS-yet-another-infinite-scroll",
   "version": "1.0.18",
-  "description": "Infinite scroll ts component",
+  "description": "Infinite scroll ts class",
   "main": "package/LinkedList.js",
   "types": "package/LinkedList.d.ts",
   "files": [
