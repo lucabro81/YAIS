@@ -1,7 +1,14 @@
+/// <reference path="./enum/EnumPosition.ts" />
+
+
+import {IBaseClass} from "./IBaseClass";
+import {Log} from "./Log";
+
 import {LinkedList} from "lucabro-linked-list/package/LinkedList";
 import {ListElement} from "lucabro-linked-list/package/ListElement";
+import {adasd} from "./enum/EnumPosition";
+import ElemPosition = adasd.ElemPosition;
 
-// TODO: valutare se passare come generic il tipo di dato che sarà dentro il nodo della lista
 class YAIS implements IBaseClass {
 
     static SCROLL_EVENT:string = "scroll";
@@ -33,8 +40,6 @@ class YAIS implements IBaseClass {
 
         this.enableDebug(is_debug_enabled);
 
-        Log.d(this, null, "constructor");
-
         this.data = [];
         this.template_item = null;
         this.ll = null;
@@ -54,6 +59,8 @@ class YAIS implements IBaseClass {
         this.is_loop = false;
         this.is_scroll_enabled = false;
         this.is_scroll_avaible = true;
+
+        Log.d(this, "constructor", false);
     }
 
 ////////////////////////////////////////////////
@@ -65,7 +72,7 @@ class YAIS implements IBaseClass {
                 items_per_page:number,
                 loop:boolean = false) {
 
-        Log.d(this, this.init, "initialization");
+        Log.d(this, "init", false);
 
         this.data = data;
         this.items_per_page = items_per_page;
@@ -75,8 +82,8 @@ class YAIS implements IBaseClass {
         this.outer_container = container;
 
         this.initContainer(this.outer_container);
-        this.initList();
         this.initDefaultItemElem();
+        this.initList();
         this.onScrollListener();
 
         // TODO: validazione elementi input (container, data, items_per_page, obbligatori)
@@ -91,6 +98,8 @@ class YAIS implements IBaseClass {
     }
 
     public onScrollListener(handler:(evt:any) => void = null): void {
+
+        Log.d(this, "onScrollLister", false, {tag: "handler", value: handler});
 
         if (this.on_scroll_event_handler !== null) {
             this.outer_container.removeEventListener(YAIS.SCROLL_EVENT, this.on_scroll_event_handler);
@@ -269,17 +278,20 @@ class YAIS implements IBaseClass {
      */
     private initList():void {
 
-        /*this.ll = new LinkedList<ListElement>();
+        this.ll = new LinkedList<ListElement>();
         this.ll.init(ListElement);
 
         for (let i = 0; i < this.items_per_page*3; i++) {
             if (this.data[i]) {
-                this.ll.addElem(this.data[i]);
+                this.ll.addElem(this.createElem(this.data[i]));
+                this.container.appendChild(this.ll.get().data);
             }
             else {
                 break;
             }
-        }*/
+        }
+
+        Log.d(this, "initList", false, {tag: "list", value: this.ll});
     }
 
     /**
@@ -291,6 +303,8 @@ class YAIS implements IBaseClass {
         let inner_container_elem:HTMLElement = document.createElement("DIV");
 
         outer_container.style.overflow = "hidden";
+        outer_container.style.overflowY = "scroll";
+
         outer_container.appendChild(inner_container_elem);
 
         this.container = inner_container_elem;
@@ -301,7 +315,16 @@ class YAIS implements IBaseClass {
      * @param evt
      */
     private onScrollEventDefaultHandler(evt:any) {
+
+
+        //console.log("this.outer_container.scrollTop", this.outer_container.scrollTop);
+        //console.log("this.previous_scroll_value", this.previous_scroll_value);
+
+
         if (this.outer_container.scrollTop > this.previous_scroll_value) {
+
+            console.log("giù");
+
             if (((this.outer_container.scrollTop) > this.current_elem_height - 600) && (this.is_scroll_avaible)) {
 
                 this.is_scroll_avaible = false;
@@ -357,15 +380,15 @@ class YAIS implements IBaseClass {
                      });
                      */
 
-                    let new_elem:HTMLElement = app.createElem(data_source[i], false);
+                    /*let new_elem:any = {asdf: "asdf"};
 
                     if (this.current_page > 2) {
-                        app.removeElem(this.ll.start.data);
+                        //app.removeElem(this.ll.start.data);
                         this.ll.shiftLeft().end.data = new_elem;
                     }
                     else {
                         this.ll.addElem(new_elem);
-                    }
+                    }*/
                 }
                 this.current_page++;
 
@@ -375,7 +398,7 @@ class YAIS implements IBaseClass {
             }
         }
         else if (this.outer_container.scrollTop < this.previous_scroll_value) {
-
+            console.log("su");
         }
 
         this.previous_scroll_value = this.outer_container.scrollTop;
@@ -419,9 +442,61 @@ class YAIS implements IBaseClass {
      *
      */
     private initDefaultItemElem():void {
+
         let template = document.createElement('template');
         template.innerHTML = "<div></div>";
+
         this.template_item = template.content.firstChild;
+    }
+
+    /**
+     *
+     * @param data
+     * @returns {HTMLElement}
+     */
+    private createElem(data:any):HTMLElement {
+
+        let t = document.createTextNode(data);
+        let new_elem:HTMLElement = <HTMLElement>this.template_item.cloneNode(true);
+
+        new_elem.appendChild(t);
+
+        return new_elem;
+    }
+
+    /**
+     *
+     * @param node
+     */
+    private detachElem(node:Node): void {
+
+        let parent = node.parentNode;
+
+        if (!parent) { return; }
+
+        parent.removeChild(node);
+    }
+
+    /**
+     *
+     * @param parent
+     * @param node
+     * @param ref_node
+     * @param position  AFTER|BEFORE
+     */
+    private reattachElem(parent:HTMLElement, node:Node, ref_node:Node, position:ElemPosition): void {
+        if (position === ElemPosition.BEFORE) {
+            parent.insertBefore(node, ref_node);
+        }
+        if (position === ElemPosition.AFTER) {
+            let next = node.nextSibling;
+            if (next) {
+                parent.insertBefore(node, next);
+            }
+            else {
+                parent.appendChild(node);
+            }
+        }
     }
 
 } export {YAIS};
