@@ -1,13 +1,10 @@
-/// <reference path="./enum/EnumPosition.ts" />
-
 
 import {IBaseClass} from "./IBaseClass";
 import {Log} from "./Log";
+import {ElemPosition} from "./enum/Enums";
 
 import {LinkedList} from "lucabro-linked-list/package/LinkedList";
 import {ListElement} from "lucabro-linked-list/package/ListElement";
-import {adasd} from "./enum/EnumPosition";
-import ElemPosition = adasd.ElemPosition;
 
 class YAIS implements IBaseClass {
 
@@ -35,6 +32,8 @@ class YAIS implements IBaseClass {
     private is_scroll_enabled:boolean;
     private is_scroll_avaible:boolean;
     private is_debug_enabled:boolean;
+    private is_going_down:boolean;
+    private is_going_up:boolean;
 
     constructor(is_debug_enabled:boolean = false) {
 
@@ -84,6 +83,7 @@ class YAIS implements IBaseClass {
         this.initContainer(this.outer_container);
         this.initDefaultItemElem();
         this.initList();
+        this.initParams();
         this.onScrollListener();
 
         // TODO: validazione elementi input (container, data, items_per_page, obbligatori)
@@ -143,8 +143,10 @@ class YAIS implements IBaseClass {
 
     }
 
-    public addItemNext() {
-
+    public addItemNext(data:any) {
+        let new_elem:any = this.createElem(data);
+        this.ll.addElem(new_elem);
+        this.container.appendChild(this.ll.get().data);
     }
 
     public addPagPrev() {
@@ -155,8 +157,16 @@ class YAIS implements IBaseClass {
 
     }
 
-    public shiftNextItem() {
+    public shiftNextItem(data:any) {
+        let node_to_reattach:Node = this.ll.start.data;
 
+        this.detachElem(node_to_reattach);
+        this.ll.shiftLeft();
+        (<HTMLElement>node_to_reattach).innerHTML = data;
+        this.reattachElem(this.container,
+            node_to_reattach,
+            this.ll.end.prev.data,
+            ElemPosition.AFTER);
     }
 
     public shiftPrevItem() {
@@ -290,8 +300,15 @@ class YAIS implements IBaseClass {
                 break;
             }
         }
-
         Log.d(this, "initList", false, {tag: "list", value: this.ll});
+    }
+
+    /**
+     *
+     */
+    private initParams():void {
+        this.current_page += 2;
+        this.current_elem_height = this.container.offsetHeight;
     }
 
     /**
@@ -316,92 +333,109 @@ class YAIS implements IBaseClass {
      */
     private onScrollEventDefaultHandler(evt:any) {
 
-
         //console.log("this.outer_container.scrollTop", this.outer_container.scrollTop);
         //console.log("this.previous_scroll_value", this.previous_scroll_value);
 
-
-        if (this.outer_container.scrollTop > this.previous_scroll_value) {
+        if (this.isGoingDown()) {
 
             console.log("giù");
 
-            if (((this.outer_container.scrollTop) > this.current_elem_height - 600) && (this.is_scroll_avaible)) {
+            if (this.cameBackFromGoingUp()) {
+                // settare pagina corrente corretta
+            }
+
+            this.goingDown();
+
+            if (this.bottomReached(600) && (this.is_scroll_avaible)) {
 
                 this.is_scroll_avaible = false;
-                for (let i = this.items_per_page * this.current_page;
-                     i < this.items_per_page * (this.current_page + 1);
-                     i++) {
 
-                    /*
-                    function detach(node, async, fn) {
-                        var parent = node.parentNode;
-                        var next = node.nextSibling;
-                        // No parent node? Abort!
-                        if (!parent) { return; }
-                        // Detach node from DOM.
-                        parent.removeChild(node);
-                        // Handle case where optional `async` argument is omitted.
-                        if (typeof async !== "boolean") {
-                            fn = async;
-                            async = false;
-                        }
-                        // Note that if a function wasn't passed, the node won't be re-attached!
-                        if (fn && async) {
-                            // If async == true, reattach must be called manually.
-                            fn.call(node, reattach);
-                        } else if (fn) {
-                            // If async != true, reattach will happen automatically.
-                            fn.call(node);
-                            reattach();
-                        }
-                        // Re-attach node to DOM.
-                        function reattach() {
-                            parent.insertBefore(node, next);
-                        }
-                    }
-
-
-
-                     // Get an element.
-                     var elem = document.getElementById('huge-ass-table');
-
-                     // Just detach element from the DOM.
-                     detach(elem);
-
-                     // Detach + exec fn + reattach, synchronous.
-                     detach(elem, function() {
-                     // this == elem, do stuff here.
-                     });
-
-                     // Detach + exec fn + reattach, asynchronous.
-                     detach(elem, true, function(reattach) {
-                     // this == elem, do stuff here, call reattach() when done!
-                     setTimeout(reattach, 1000);
-                     });
-                     */
-
-                    /*let new_elem:any = {asdf: "asdf"};
-
-                    if (this.current_page > 2) {
-                        //app.removeElem(this.ll.start.data);
-                        this.ll.shiftLeft().end.data = new_elem;
-                    }
-                    else {
-                        this.ll.addElem(new_elem);
-                    }*/
-                }
+                this.addElemsToBottom();
                 this.current_page++;
-
                 this.current_elem_height = this.container.offsetHeight;
 
                 this.is_scroll_avaible = true;
             }
         }
-        else if (this.outer_container.scrollTop < this.previous_scroll_value) {
+
+        if (this.isGoingUp()) {
+
             console.log("su");
+
+            if (this.cameBackFromGoingDown()) {
+                // settare pagina corrente corretta
+            }
+
+            this.goingUp();
+
+            if (this.topReached(600) && (this.is_scroll_avaible)) {
+
+            }
         }
 
         this.previous_scroll_value = this.outer_container.scrollTop;
+    }
+
+    private isGoingUp():boolean {
+        return this.outer_container.scrollTop < this.previous_scroll_value;
+    }
+
+    private goingUp():void {
+        this.is_going_down = false;
+        this.is_going_up = true;
+    }
+
+    private isGoingDown():boolean {
+        return this.outer_container.scrollTop > this.previous_scroll_value;
+    }
+
+    private goingDown():void {
+        this.is_going_down = true;
+        this.is_going_up = false;
+    }
+
+    private cameBackFromGoingDown():boolean {
+        return this.is_going_down;
+    }
+
+    private cameBackFromGoingUp():boolean {
+        return this.is_going_up;
+    }
+
+    private bottomReached(offset:number):boolean {
+        return ((this.outer_container.scrollTop) > this.current_elem_height - offset)
+    }
+
+    private topReached(offset:number):boolean {
+
+    }
+
+    private addElemsToBottom():void {
+        for (let i = this.items_per_page * this.current_page;
+             i < this.items_per_page * (this.current_page + 1);
+             i++) {
+
+            if (this.current_page > 2) {
+                this.shiftNextItem(this.data[i]);
+            }
+            else {
+                this.addItemNext(this.data[i]);
+            }
+        }
+    }
+
+    private addElemsToTop() {
+        for (let i = this.items_per_page * this.current_page;
+             i < this.items_per_page * (this.current_page + 1);
+             i++) {
+
+            if (this.current_page > 2) {
+                this.shiftPrevItem(this.data[i]);
+            }
+            else {
+                this.addItemPrev(this.data[i]);
+            }
+        }
     }
 
     /**
@@ -484,12 +518,14 @@ class YAIS implements IBaseClass {
      * @param ref_node
      * @param position  AFTER|BEFORE
      */
-    private reattachElem(parent:HTMLElement, node:Node, ref_node:Node, position:ElemPosition): void {
+    private reattachElem(parent:HTMLElement,
+                         node:Node, ref_node:Node,
+                         position:ElemPosition = ElemPosition.AFTER): void {
         if (position === ElemPosition.BEFORE) {
             parent.insertBefore(node, ref_node);
         }
         if (position === ElemPosition.AFTER) {
-            let next = node.nextSibling;
+            let next = ref_node.nextSibling;
             if (next) {
                 parent.insertBefore(node, next);
             }
