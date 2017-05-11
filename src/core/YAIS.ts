@@ -58,6 +58,8 @@ class YAIS implements IBaseClass {
         this.is_loop = false;
         this.is_scroll_enabled = false;
         this.is_scroll_avaible = true;
+        this.is_going_down = false;
+        this.is_going_up = false;
 
         Log.d(this, "constructor", false);
     }
@@ -245,8 +247,15 @@ class YAIS implements IBaseClass {
     public destroy():void {
 
         this.destroyArray(this.data);
+
+        this.ll.toStart();
+        while (this.ll.isEnd()) {
+            (<HTMLElement>this.ll.get().data).remove();
+        }
         this.ll.destroy();
+
         this.outer_container.removeEventListener(YAIS.SCROLL_EVENT, this.on_scroll_event_handler);
+        this.outer_container.remove();
 
         this.data = null;
         this.template_item = null;
@@ -267,6 +276,8 @@ class YAIS implements IBaseClass {
         this.is_loop = null;
         this.is_scroll_enabled = null;
         this.is_scroll_avaible = null;
+        this.is_going_down = null;
+        this.is_going_up = null;
     }
 
 /////////////////////////////////////////////////
@@ -342,6 +353,7 @@ class YAIS implements IBaseClass {
 
             if (this.cameBackFromGoingUp()) {
                 // settare pagina corrente corretta
+                this.current_page += 2;
             }
 
             this.goingDown();
@@ -364,6 +376,7 @@ class YAIS implements IBaseClass {
 
             if (this.cameBackFromGoingDown()) {
                 // settare pagina corrente corretta
+                this.current_page -= 2;
             }
 
             this.goingUp();
@@ -403,7 +416,7 @@ class YAIS implements IBaseClass {
     }
 
     private bottomReached(offset:number):boolean {
-        return ((this.outer_container.scrollTop) > this.current_elem_height - offset)
+        return ((this.outer_container.scrollTop) > this.current_elem_height - offset);
     }
 
     private topReached(offset:number):boolean {
