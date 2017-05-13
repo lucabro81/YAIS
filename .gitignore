@@ -4,3 +4,6 @@ dist/js
 spec/app
 spec/**/*.js
 package
+.DS_Store
+dist/.DS_Store
+src/.DS_Store
