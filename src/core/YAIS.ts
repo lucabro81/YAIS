@@ -1,14 +1,17 @@
 
 import {IBaseClass} from "./IBaseClass";
 import {Log} from "./Log";
-import {ElemPosition} from "./enum/Enums";
 
 import {LinkedList} from "lucabro-linked-list/package/LinkedList";
 import {ListElement} from "lucabro-linked-list/package/ListElement";
 
-class YAIS implements IBaseClass {
+import {Enumerations} from "./Enums";
+import {Const} from "./Const";
 
-    static SCROLL_EVENT:string = "scroll";
+import ElemPosition = Enumerations.ElemPosition;
+import Events = Const.Events;
+
+class YAIS implements IBaseClass {
 
     public name:string = "YAIS";
 
@@ -86,7 +89,7 @@ class YAIS implements IBaseClass {
         this.initDefaultItemElem();
         this.initList();
         this.initParams();
-        this.onScrollListener();
+        //this.onScrollListener();
 
         // TODO: validazione elementi input (container, data, items_per_page, obbligatori)
     }
@@ -101,16 +104,15 @@ class YAIS implements IBaseClass {
 
     public onScrollListener(handler:(evt:any) => void = null): void {
 
-        Log.d(this, "onScrollLister", false, {tag: "handler", value: handler});
+        //Log.d(this, "onScrollLister", false, {tag: "handler", value: handler});
 
-        if (this.on_scroll_event_handler !== null) {
-            this.outer_container.removeEventListener(YAIS.SCROLL_EVENT, this.on_scroll_event_handler);
-        }
+        //if (this.on_scroll_event_handler !== null)
+            this.outer_container.removeEventListener(Events.SCROLL_EVENT, this.on_scroll_event_handler);
+        //}
 
         this.on_scroll_event_handler = this.createScrollEventHandler(handler);
 
-        // TODO: non sono sicuro dello scope, controllare
-        this.outer_container.addEventListener(YAIS.SCROLL_EVENT, this.on_scroll_event_handler);
+        this.outer_container.addEventListener(Events.SCROLL_EVENT, this.on_scroll_event_handler);
     }
 
     public setTemplateItem(template_item:string) {
@@ -128,24 +130,24 @@ class YAIS implements IBaseClass {
     public updateData() {
         // TODO: concat?
     }
-    
+
     public howManyItems() {
-        
+
     }
-    
+
     public howManyPages() {
-        
+
     }
-    
+
     public currentPage() {
-        
-    }
-
-    public addItemPrev() {
 
     }
 
-    public addItemNext(data:any) {
+    public addItemPrev(data:any): void {
+
+    }
+
+    public addItemNext(data:any): void {
         let new_elem:any = this.createElem(data);
         this.ll.addElem(new_elem);
         this.container.appendChild(this.ll.get().data);
@@ -171,8 +173,19 @@ class YAIS implements IBaseClass {
             ElemPosition.AFTER);
     }
 
-    public shiftPrevItem() {
+    public shiftPrevItem(data:any) {
 
+        console.log("sdffssd");
+
+        let node_to_reattach:Node = this.ll.end.data;
+
+        this.detachElem(node_to_reattach);
+        this.ll.shiftRight();
+        (<HTMLElement>node_to_reattach).innerHTML = data;
+        this.reattachElem(this.container,
+            node_to_reattach,
+            this.ll.start.next.data,
+            ElemPosition.BEFORE);
     }
 
     public shiftNextPage() {
@@ -254,7 +267,7 @@ class YAIS implements IBaseClass {
         }
         this.ll.destroy();
 
-        this.outer_container.removeEventListener(YAIS.SCROLL_EVENT, this.on_scroll_event_handler);
+        this.outer_container.removeEventListener(Events.SCROLL_EVENT, this.on_scroll_event_handler);
         this.outer_container.remove();
 
         this.data = null;
@@ -344,21 +357,20 @@ class YAIS implements IBaseClass {
      */
     private onScrollEventDefaultHandler(evt:any) {
 
-        //console.log("this.outer_container.scrollTop", this.outer_container.scrollTop);
-        //console.log("this.previous_scroll_value", this.previous_scroll_value);
-
         if (this.isGoingDown()) {
-
-            console.log("giù");
 
             if (this.cameBackFromGoingUp()) {
                 // settare pagina corrente corretta
-                this.current_page += 2;
+                this.current_page += 3;
             }
+
+            console.log("giù " + this.current_page);
 
             this.goingDown();
 
             if (this.bottomReached(600) && (this.is_scroll_avaible)) {
+
+                console.log("asdfasdfa");
 
                 this.is_scroll_avaible = false;
 
@@ -369,20 +381,28 @@ class YAIS implements IBaseClass {
                 this.is_scroll_avaible = true;
             }
         }
-
-        if (this.isGoingUp()) {
-
-            console.log("su");
+        else if (this.isGoingUp()) {
 
             if (this.cameBackFromGoingDown()) {
                 // settare pagina corrente corretta
-                this.current_page -= 2;
+                this.current_page -= 3;
             }
+
+            console.log("su " + this.current_page);
 
             this.goingUp();
 
             if (this.topReached(600) && (this.is_scroll_avaible)) {
 
+                console.log("dioporco");
+
+                this.is_scroll_avaible = false;
+
+                this.addElemsToTop();
+                this.current_page--;
+                this.current_elem_height = this.container.offsetHeight;
+
+                this.is_scroll_avaible = true;
             }
         }
 
@@ -421,6 +441,9 @@ class YAIS implements IBaseClass {
 
     private topReached(offset:number):boolean {
 
+        //if (((infinity_scroll_cont.scrollTop) < (app.padding_top + 600)) && (is_scroll_avaible)) {
+
+        return ((this.outer_container.scrollTop) < offset && this.current_page > 0);
     }
 
     private addElemsToBottom():void {
@@ -428,26 +451,26 @@ class YAIS implements IBaseClass {
              i < this.items_per_page * (this.current_page + 1);
              i++) {
 
-            if (this.current_page > 2) {
+            //if (this.current_page > 2) {
                 this.shiftNextItem(this.data[i]);
-            }
-            else {
-                this.addItemNext(this.data[i]);
-            }
+            //}
+            //else {
+            //    this.addItemNext(this.data[i]);
+            //}
         }
     }
 
     private addElemsToTop() {
-        for (let i = this.items_per_page * this.current_page;
-             i < this.items_per_page * (this.current_page + 1);
-             i++) {
+        for (let i = (this.items_per_page * this.current_page) - 1;
+             i >= this.items_per_page * (this.current_page - 1);
+             i--) {
 
-            if (this.current_page > 2) {
+            //if (this.current_page > 2) {
                 this.shiftPrevItem(this.data[i]);
-            }
-            else {
-                this.addItemPrev(this.data[i]);
-            }
+            //}
+            //else {
+            //    this.addItemPrev(this.data[i]);
+            //}
         }
     }
 
@@ -458,31 +481,23 @@ class YAIS implements IBaseClass {
      */
     private createScrollEventHandler(handler:(evt:any) => void) {
 
+        Log.d(this, "createScrollEventHandler", false, {tag: "handler", value: handler});
         this.handler = handler;
 
-        return (evt:any):void => {
-            if (this.handler === null && this.is_scroll_enabled) {
-                this.onScrollEventDefaultHandler(evt);
-            }
-            else if (this.is_scroll_enabled) {
-                this.handler(evt);
-            }
-        };
-
-        /*if (handler === null) {
+        if (handler === null) {
             return (evt:any):void => {
                 if (this.is_scroll_enabled) {
                     this.onScrollEventDefaultHandler(evt);
                 }
             }
         }
-        else {
-            return (evt:any):void => {
-                if (this.is_scroll_enabled) {
-                    handler(evt);
-                }
+
+        return (evt:any):void => {
+            if (this.is_scroll_enabled) {
+                this.handler(evt);
             }
-        }*/
+        }
+
     }
 
     /**
@@ -506,7 +521,8 @@ class YAIS implements IBaseClass {
         let t = document.createTextNode(data);
         let new_elem:HTMLElement = <HTMLElement>this.template_item.cloneNode(true);
 
-        new_elem.appendChild(t);
+        //new_elem.appendChild(t);
+        new_elem.innerHTML = data;
 
         return new_elem;
     }

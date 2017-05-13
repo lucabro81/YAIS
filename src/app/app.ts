@@ -15,7 +15,7 @@ function craeteString(l:number) {
 let data_source:Array<string> = [];
 for (let i = 0; i < 50000; i++) {
     let l:number = (Math.random() * 100) + 1;
-    let str:string = (i+1) + ' - ' + craeteString(l);
+    let str:any = '<strong>' + (i+1) + '</strong>' + ' - ' + craeteString(l);
     data_source.push(str);
 }
 
