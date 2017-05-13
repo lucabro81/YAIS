@@ -1,14 +1,12 @@
+import {LinkedList} from "lucabro-linked-list/package/LinkedList";
+import {ListElement} from "lucabro-linked-list/package/ListElement";
 
 import {IBaseClass} from "./IBaseClass";
 import {Log} from "./Log";
 
-import {LinkedList} from "lucabro-linked-list/package/LinkedList";
-import {ListElement} from "lucabro-linked-list/package/ListElement";
-
-import {Enumerations} from "./Enums";
+import {ElemPosition} from "./Enums";
 import {Const} from "./Const";
 
-import ElemPosition = Enumerations.ElemPosition;
 import Events = Const.Events;
 
 class YAIS implements IBaseClass {
@@ -144,7 +142,9 @@ class YAIS implements IBaseClass {
     }
 
     public addItemPrev(data:any): void {
-
+        let new_elem:HTMLElement = this.createElem(data);
+        this.ll.addElemLeft(new_elem);
+        this.container.insertBefore(new_elem, this.ll.start.data);
     }
 
     public addItemNext(data:any): void {
