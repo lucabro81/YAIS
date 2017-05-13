@@ -1,0 +1,19 @@
+body {
+    padding:20px;
+    font-family: "Courier New", Courier, monospace;
+}
+pre {
+    background: #e0e0e0;
+    padding: 20px;
+    border-radius: 10px;
+    margin: 10px;
+}
+.scroll-cont {
+    width: 100%;
+    height: 300px;
+    margin-top: 20px;
+    overflow: hidden;
+    overflow-y: scroll;
+    border:1px #000 solid;
+}
+

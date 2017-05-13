@@ -21,7 +21,8 @@ function tsToFile(file, out_dir) {
         .pipe(ts({
             module: "amd",
             outDir: out_dir,
-            outFile: file + ".js"
+            outFile: file + ".js",
+            moduleResolution: "node"
         }))
         .pipe(sourcemaps.write('.', {sourceRoot: __dirname + "/src"}))
         .pipe(gulp.dest("dist/js/"));

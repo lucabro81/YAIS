@@ -1,7 +1,7 @@
 {
-  "name": "yais-infinite-scroll",
+  "name": "YAIS-yet-another-infinite-scroll",
   "version": "1.0.18",
-  "description": "Infinite scroll ts component",
+  "description": "Infinite scroll ts class",
   "main": "package/LinkedList.js",
   "types": "package/LinkedList.d.ts",
   "files": [
@@ -34,7 +34,7 @@
   },
   "devDependencies": {
     "@types/jasmine": "^2.5.40",
-    "@types/requirejs": "^2.1.28",
+    "@types/requirejs": "*",
     "core-js": "^2.4.1",
     "del": "^2.2.2",
     "gulp": "^3.9.1",
@@ -44,8 +44,13 @@
     "gulp-sourcemaps": "^1.9.1",
     "gulp-typescript": "^3.1.3",
     "gulp-uglify": "^2.0.0",
+    "install": "^0.8.9",
     "jasmine": "^2.5.2",
+    "npm": "^4.5.0",
+    "requirejs": "^2.3.3",
     "signals": "^1.0.0",
+    "source-map-loader": "^0.2.1",
+    "ts-loader": "^2.0.3",
     "typescript": "^2.1.4",
     "typings": "^2.1.0",
     "vinyl-paths": "^2.1.0",
