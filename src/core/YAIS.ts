@@ -8,10 +8,18 @@ import {ElemPosition} from "./Enums";
 import {Const} from "./Const";
 
 import Events = Const.Events;
+import {Signal} from "signals";
 
 class YAIS implements IBaseClass {
 
     public name:string = "YAIS";
+
+    public onScrollStartGoingUp:Signal = new Signal();
+    public onScrollGoingUp:Signal = new Signal();
+    public onScrollFinishGoingUp:Signal = new Signal();
+    public onScrollStartGoingDown:Signal = new Signal();
+    public onScrollGoingDown:Signal = new Signal();
+    public onScrollFinishGoingDown:Signal = new Signal();
 
     public data:Array<any>;
     public template_item:Node;
@@ -240,12 +248,12 @@ class YAIS implements IBaseClass {
 
     }
 
-    public enableLoop() {
-
+    public enableLoop():void {
+        this.is_loop = true;
     }
 
-    public isLoopEnabled() {
-
+    public isLoopEnabled():boolean {
+        return this.is_loop;
     }
 
     public enableDebug(enable:boolean) {
@@ -291,6 +299,13 @@ class YAIS implements IBaseClass {
         this.is_scroll_avaible = null;
         this.is_going_down = null;
         this.is_going_up = null;
+
+        this.onScrollStartGoingUp.removeAll();
+        this.onScrollGoingUp.removeAll();
+        this.onScrollFinishGoingUp.removeAll();
+        this.onScrollStartGoingDown.removeAll();
+        this.onScrollGoingDown.removeAll();
+        this.onScrollFinishGoingDown.removeAll();
     }
 
 /////////////////////////////////////////////////
@@ -360,17 +375,12 @@ class YAIS implements IBaseClass {
         if (this.isGoingDown()) {
 
             if (this.cameBackFromGoingUp()) {
-                // settare pagina corrente corretta
                 this.current_page += 3;
             }
-
-            console.log("giù " + this.current_page);
 
             this.goingDown();
 
             if (this.bottomReached(600) && (this.is_scroll_avaible)) {
-
-                console.log("asdfasdfa");
 
                 this.is_scroll_avaible = false;
 
@@ -384,17 +394,12 @@ class YAIS implements IBaseClass {
         else if (this.isGoingUp()) {
 
             if (this.cameBackFromGoingDown()) {
-                // settare pagina corrente corretta
                 this.current_page -= 3;
             }
-
-            console.log("su " + this.current_page);
 
             this.goingUp();
 
             if (this.topReached(600) && (this.is_scroll_avaible)) {
-
-                console.log("dioporco");
 
                 this.is_scroll_avaible = false;
 
@@ -440,9 +445,6 @@ class YAIS implements IBaseClass {
     }
 
     private topReached(offset:number):boolean {
-
-        //if (((infinity_scroll_cont.scrollTop) < (app.padding_top + 600)) && (is_scroll_avaible)) {
-
         return ((this.outer_container.scrollTop) < offset && this.current_page > 0);
     }
 
@@ -450,27 +452,15 @@ class YAIS implements IBaseClass {
         for (let i = this.items_per_page * this.current_page;
              i < this.items_per_page * (this.current_page + 1);
              i++) {
-
-            //if (this.current_page > 2) {
-                this.shiftNextItem(this.data[i]);
-            //}
-            //else {
-            //    this.addItemNext(this.data[i]);
-            //}
+            this.shiftNextItem(this.data[i]);
         }
     }
 
-    private addElemsToTop() {
+    private addElemsToTop():void {
         for (let i = (this.items_per_page * this.current_page) - 1;
              i >= this.items_per_page * (this.current_page - 1);
              i--) {
-
-            //if (this.current_page > 2) {
-                this.shiftPrevItem(this.data[i]);
-            //}
-            //else {
-            //    this.addItemPrev(this.data[i]);
-            //}
+            this.shiftPrevItem(this.data[i]);
         }
     }
 
@@ -517,13 +507,8 @@ class YAIS implements IBaseClass {
      * @returns {HTMLElement}
      */
     private createElem(data:any):HTMLElement {
-
-        let t = document.createTextNode(data);
         let new_elem:HTMLElement = <HTMLElement>this.template_item.cloneNode(true);
-
-        //new_elem.appendChild(t);
-        new_elem.innerHTML = data;
-
+        (<HTMLElement>new_elem.firstChild).innerHTML = data;
         return new_elem;
     }
 
