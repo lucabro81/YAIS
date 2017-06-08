@@ -8,5 +8,6 @@ export enum Settings {
     CLASS_ITEM = 1,
     DATA = 2,
     ITEMS_PER_PAGE = 3,
-    LOOP = 4,
+    ITEM_TEMPLATE = 4,
+    LOOP = 5
 }
