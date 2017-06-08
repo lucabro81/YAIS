@@ -34,17 +34,21 @@ class YAIS implements IBaseClass {
     private pages:number;
     private outer_container:HTMLElement;
     private handler:(evt:any) => void;
-    private scroll_up_handler:(evt:any) => void;
-    private scroll_down_handler:(evt:any) => void;
+    private scroll_up_handler:(evt:any, scope?:YAIS) => void;
+    private scroll_down_handler:(evt:any, scope?:YAIS) => void;
     private on_scroll_event_handler:(evt:any) => void;
     private previous_scroll_value:number;
     private current_elem_height:number;
+    private bottom_reached:number;
+    private top_reached:number;
     private is_loop:boolean;
     private is_scroll_enabled:boolean;
     private is_scroll_avaible:boolean;
     private is_debug_enabled:boolean;
     private is_going_down:boolean;
     private is_going_up:boolean;
+    private is_going_down_started:boolean;
+    private is_going_up_started:boolean;
 
     constructor(is_debug_enabled:boolean = false) {
 
@@ -63,14 +67,20 @@ class YAIS implements IBaseClass {
         this.current_page = 1;
         this.outer_container = null;
         this.handler = null;
+        this.scroll_up_handler = null;
+        this.scroll_down_handler = null;
         this.on_scroll_event_handler = null;
         this.previous_scroll_value = 0;
         this.current_elem_height = 0;
+        this.bottom_reached = 0;
+        this.top_reached = 0;
         this.is_loop = false;
         this.is_scroll_enabled = false;
         this.is_scroll_avaible = true;
         this.is_going_down = false;
         this.is_going_up = false;
+        this.is_going_down_started = true;
+        this.is_going_up_started = true;
 
         Log.d(this, "constructor", false);
     }
@@ -78,29 +88,6 @@ class YAIS implements IBaseClass {
 ////////////////////////////////////////////////
 //////////////////// PUBLIC ////////////////////
 ////////////////////////////////////////////////
-
-    /*public init(container:HTMLElement,
-                data:Array<any>,
-                items_per_page:number,
-                loop:boolean = false) {
-
-        Log.d(this, "init", false);
-
-        this.data = data;
-        this.items_per_page = items_per_page;
-        this.pages = 1;
-        this.length = this.items_per_page;
-        this.is_loop = loop;
-        this.outer_container = container;
-
-        this.initContainer(this.outer_container);
-        this.initDefaultItemElem();
-        this.initList();
-        this.initParams();
-        //this.onScrollListener();
-
-        // TODO: validazione elementi input (container, data, items_per_page, obbligatori)
-    }*/
 
     public init() {
 
@@ -126,6 +113,14 @@ class YAIS implements IBaseClass {
 
         if (this.template_item === null) {
             this.initDefaultItemElem();
+        }
+
+        if (this.bottom_reached === 0) {
+            this.bottom_reached = 600;
+        }
+
+        if (this.top_reached === 0) {
+            this.top_reached = 600;
         }
 
         // Init
@@ -180,6 +175,12 @@ class YAIS implements IBaseClass {
         switch (option) {
             case Settings.ITEMS_PER_PAGE:
                 this.items_per_page = value;
+                break;
+            case Settings.BOTTOM_REACHED:
+                this.bottom_reached = value;
+                break;
+            case Settings.TOP_REACHED:
+                this.top_reached = value;
                 break;
         }
     }
@@ -447,16 +448,8 @@ class YAIS implements IBaseClass {
 /////////////////////////////////////////////////
 
     private onScrollListener(): void {
-
-        //Log.d(this, "onScrollLister", false, {tag: "handler", value: handler});
-
-        //if (this.on_scroll_event_handler !== null)
         this.outer_container.removeEventListener(Events.SCROLL_EVENT, this.on_scroll_event_handler);
-        //}
-
-        // this.on_scroll_event_handler = this.createScrollEventHandler(handler);
         this.on_scroll_event_handler = this.createScrollEventHandler();
-
         this.outer_container.addEventListener(Events.SCROLL_EVENT, this.on_scroll_event_handler);
     }
 
@@ -478,6 +471,9 @@ class YAIS implements IBaseClass {
         this.ll = new LinkedList<ListElement>();
         this.ll.init(ListElement);
 
+        console.log("this.items_per_page", this.items_per_page);
+        console.log("this.items_per_page*3", (this.items_per_page*3));
+
         for (let i = 0; i < this.items_per_page*3; i++) {
             if (this.data[i]) {
                 this.ll.addElem(this.createElem(this.data[i]));
@@ -487,7 +483,7 @@ class YAIS implements IBaseClass {
                 break;
             }
         }
-        Log.d(this, "initList", false, {tag: "list", value: this.ll});
+
     }
 
     /**
@@ -521,29 +517,42 @@ class YAIS implements IBaseClass {
     private onScrollEventHandler(evt:any) {
 
         if (this.isGoingDown()) {
+
+            if (this.is_going_down_started) {
+                this.onScrollStartGoingDown.dispatch(evt);
+                this.is_going_down_started = false;
+            }
+
             if (this.cameBackFromGoingUp()) {
                 this.current_page += 3;
             }
             this.goingDown();
-            this.scroll_down_handler(evt);
+            this.scrollDownHandler(evt);
         }
         else if (this.isGoingUp()) {
+
+            if (this.is_going_up_started) {
+                this.onScrollStartGoingUp.dispatch(evt);
+                this.is_going_up_started = false;
+            }
+
             if (this.cameBackFromGoingDown()) {
                 this.current_page -= 3;
             }
             this.goingUp();
-            this.scroll_up_handler(evt);
+            this.scrollUpHandler(evt);
         }
 
         this.previous_scroll_value = this.outer_container.scrollTop;
     }
 
-    private defaultScrollDownHandler(evt:any):void {
-        if (this.bottomReached(600) && (this.is_scroll_avaible)) {
+    private scrollDownHandler(evt:any):void {
+        if (this.bottomReached(this.bottom_reached) && (this.is_scroll_avaible)) {
 
             this.is_scroll_avaible = false;
 
-            this.addElemsToBottom();
+            this.scroll_down_handler(evt, this);
+
             this.current_page++;
             this.current_elem_height = this.container.offsetHeight;
 
@@ -551,12 +560,17 @@ class YAIS implements IBaseClass {
         }
     }
 
-    private defaultScrollUpHandler(evt:any):void {
-        if (this.topReached(600) && (this.is_scroll_avaible)) {
+    private defaultScrollDownHandler(evt:any, scope?:YAIS):void {
+        this.addElemsToBottom();
+    }
+
+    private scrollUpHandler(evt:any):void {
+        if (this.topReached(this.top_reached) && (this.is_scroll_avaible)) {
 
             this.is_scroll_avaible = false;
 
-            this.addElemsToTop();
+            this.scroll_up_handler(evt, this);
+
             this.current_page--;
             this.current_elem_height = this.container.offsetHeight;
 
@@ -564,37 +578,21 @@ class YAIS implements IBaseClass {
         }
     }
 
+    private defaultScrollUpHandler(evt:any, scope?:YAIS):void {
+        this.addElemsToTop();
+    }
+
     /**
      *
      * @param handler
      * @returns {(evt:any)=>undefined}
      */
-    //private createScrollEventHandler(handler:(evt:any) => void) {
     private createScrollEventHandler(): (evt:any) => void {
-
-        /*Log.d(this, "createScrollEventHandler", false, {tag: "handler", value: handler});
-        this.handler = handler;
-
-        if (handler === null) {
-            return (evt:any):void => {
-                if (this.is_scroll_enabled) {
-                    this.onScrollEventDefaultHandler(evt);
-                }
-            }
-        }
-
-        return (evt:any):void => {
-            if (this.is_scroll_enabled) {
-                this.handler(evt);
-            }
-        }*/
-
         return (evt:any):void => {
             if (this.is_scroll_enabled) {
                 this.onScrollEventHandler(evt);
             }
         }
-
     }
 
     /**

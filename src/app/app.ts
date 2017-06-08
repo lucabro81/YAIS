@@ -27,16 +27,27 @@ scroll_comp = new YAIS(true);
 
 scroll_comp.setOptionHTMLElement(Settings.CONTAINER, document.getElementById("infinite-scroll-cont"));
 scroll_comp.setOptionArray<string>(Settings.DATA, data_source);
-scroll_comp.setOptionNumber(Settings.ITEMS_PER_PAGE, 40);
+scroll_comp.setOptionNumber(Settings.ITEMS_PER_PAGE, 30);
 scroll_comp.setOptionBoolean(Settings.LOOP, false);
-/*
+scroll_comp.setOptionNumber(Settings.BOTTOM_REACHED, 600);
+scroll_comp.setOptionNumber(Settings.TOP_REACHED, 600);
+
 class OnScrollListener extends AbsScrollListener {
-    public scrollUp(evt:any):void { super.scrollUp(evt); console.log("SCROLLUP!!!") };
-    public scrollDown(evt:any):void { super.scrollDown(evt); console.log("SCROLLDOWN!!!!!") }
+    public scrollUp(evt:any, yais:YAIS):void {
+        super.scrollUp(evt);
+        yais.addElemsToTop();
+        console.log("SCROLLUP!!!");
+    }
+    public scrollDown(evt:any, yais:YAIS):void {
+        super.scrollDown(evt);
+        yais.addElemsToBottom();
+        console.log("SCROLLDOWN!!!!!")
+    }
 }
+
 scroll_comp.setOnScrollListener(new OnScrollListener());
-*/
-scroll_comp.setOnScrollListener(null);
+
+//scroll_comp.setOnScrollListener(null);
 
 scroll_comp.init();
 

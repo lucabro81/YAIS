@@ -5,11 +5,11 @@ export class AbsScrollListener extends AbsListener {
         super();
     }
 
-    public scrollUp(evt:any) {
+    public scrollUp(evt:any, instance?:any) {
 
     }
 
-    public scrollDown(evt:any) {
+    public scrollDown(evt:any, instance?:any) {
 
     }
 }

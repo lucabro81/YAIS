@@ -1,4 +1,4 @@
 interface IOnScrollListener {
-    scrollUp(evt:any):void;
-    scrollDown(evt:any):void;
+    scrollUp(evt:any, instance?:any):void;
+    scrollDown(evt:any, instance?:any):void;
 }
