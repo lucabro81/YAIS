@@ -34,13 +34,33 @@ class YAIS implements IBaseClass {
     private pages:number;
     private outer_container:HTMLElement;
     private handler:(evt:any) => void;
+    /*
+     topReached(evt:any, instance?:any):void;
+     bottomReached(evt:any, instance?:any):void;
+
+     startScrollUp(evt:any, instance?:any):void;
+     scrollUp(evt:any, instance?:any):void;
+     finishScrollUp(evt:any, instance?:any):void;
+
+     startScrollDown(evt:any, instance?:any):void;
+     scrollDown(evt:any, instance?:any):void;
+     finishScrollDown(evt:any, instance?:any):void;
+     */
+    private top_reached_handler:(evt:any, scope?:YAIS) => void;
+    private bottom_reached_handler:(evt:any, scope?:YAIS) => void;
+    private start_scroll_up_handler:(evt:any, scope?:YAIS) => void;
     private scroll_up_handler:(evt:any, scope?:YAIS) => void;
+    private finish_scroll_up_handler:(evt:any, scope?:YAIS) => void;
+    private start_scroll_down_handler:(evt:any, scope?:YAIS) => void;
     private scroll_down_handler:(evt:any, scope?:YAIS) => void;
+    private finish_scroll_down_handler:(evt:any, scope?:YAIS) => void;
     private on_scroll_event_handler:(evt:any) => void;
     private previous_scroll_value:number;
     private current_elem_height:number;
     private bottom_reached:number;
     private top_reached:number;
+    private interval_going_down:number;
+    private interval_going_up:number;
     private is_loop:boolean;
     private is_scroll_enabled:boolean;
     private is_scroll_avaible:boolean;
@@ -67,13 +87,23 @@ class YAIS implements IBaseClass {
         this.current_page = 1;
         this.outer_container = null;
         this.handler = null;
+
+        this.top_reached_handler = null;
+        this.bottom_reached_handler = null;
+        this.start_scroll_up_handler = null;
         this.scroll_up_handler = null;
+        this.finish_scroll_up_handler = null;
+        this.start_scroll_down_handler = null;
         this.scroll_down_handler = null;
+        this.finish_scroll_down_handler = null;
         this.on_scroll_event_handler = null;
+
         this.previous_scroll_value = 0;
         this.current_elem_height = 0;
         this.bottom_reached = 0;
         this.top_reached = 0;
+        this.interval_going_down = 0;
+        this.interval_going_up = 0;
         this.is_loop = false;
         this.is_scroll_enabled = false;
         this.is_scroll_avaible = true;
@@ -128,9 +158,7 @@ class YAIS implements IBaseClass {
 
         this.initList();
         this.initParams();
-        //this.onScrollListener();
 
-        // TODO: validazione elementi input (container, data, items_per_page, obbligatori)
     }
 
     public setOnScrollEnabled(value:boolean) {
@@ -138,8 +166,18 @@ class YAIS implements IBaseClass {
     }
 
     public setOnScrollListener(listener:IOnScrollListener = null) {
-        this.scroll_up_handler = (listener) ? listener.scrollUp : this.defaultScrollUpHandler;
-        this.scroll_down_handler = (listener) ? listener.scrollDown : this.defaultScrollDownHandler;
+
+        this.top_reached_handler = (listener) ? listener.topReached : this.defaultTopReachedHandler;
+        this.bottom_reached_handler = (listener) ? listener.bottomReached : this.defaultBottomReachedHandler;
+
+        this.start_scroll_up_handler = (listener) ? listener.startScrollUp : (evt:any, scope?:YAIS) => {};
+        this.scroll_up_handler = (listener) ? listener.scrollUp : (evt:any, scope?:YAIS) => {};
+        this.finish_scroll_up_handler = (listener) ? listener.finishScrollUp : (evt:any, scope?:YAIS) => {};
+
+        this.start_scroll_down_handler = (listener) ? listener.startScrollDown : (evt:any, scope?:YAIS) => {};
+        this.scroll_down_handler = (listener) ? listener.scrollDown : (evt:any, scope?:YAIS) => {};
+        this.finish_scroll_down_handler = (listener) ? listener.finishScrollDown : (evt:any, scope?:YAIS) => {};
+
         this.onScrollListener();
     }
 
@@ -209,6 +247,14 @@ class YAIS implements IBaseClass {
 
         if (options.has(Settings.ITEMS_PER_PAGE)) {
             this.setOptionNumber(Settings.ITEMS_PER_PAGE, options.get(Settings.ITEMS_PER_PAGE));
+        }
+
+        if (options.has(Settings.BOTTOM_REACHED)) {
+            this.setOptionNumber(Settings.BOTTOM_REACHED, options.get(Settings.BOTTOM_REACHED));
+        }
+
+        if (options.has(Settings.TOP_REACHED)) {
+            this.setOptionNumber(Settings.TOP_REACHED, options.get(Settings.TOP_REACHED));
         }
 
         if (options.has(Settings.ITEM_TEMPLATE)) {
@@ -354,18 +400,48 @@ class YAIS implements IBaseClass {
         return this.outer_container.scrollTop < this.previous_scroll_value;
     }
 
-    public goingUp():void {
+    public goingUp(evt:any):void {
         this.is_going_down = false;
         this.is_going_up = true;
+
+        this.scroll_up_handler(evt, this);
+
+        if (this.interval_going_up) {
+            clearInterval(this.interval_going_up);
+            this.interval_going_up = 0;
+        }
+
+        this.interval_going_up = setTimeout(() => {
+            clearInterval(this.interval_going_up);
+            this.interval_going_up = 0;
+            this.is_going_up_started = true;
+            this.onScrollFinishGoingUp.dispatch();
+            this.finish_scroll_up_handler(evt, this)
+        }, 300);
     }
 
     public isGoingDown():boolean {
         return this.outer_container.scrollTop > this.previous_scroll_value;
     }
 
-    public goingDown():void {
+    public goingDown(evt:any):void {
         this.is_going_down = true;
         this.is_going_up = false;
+
+        this.scroll_down_handler(evt, this);
+
+        if (this.interval_going_down) {
+            clearInterval(this.interval_going_down);
+            this.interval_going_down = 0;
+        }
+
+        this.interval_going_down = setTimeout(() => {
+            clearInterval(this.interval_going_down);
+            this.interval_going_down = 0;
+            this.is_going_down_started = true;
+            this.onScrollFinishGoingDown.dispatch();
+            this.finish_scroll_down_handler(evt, this);
+        }, 300);
     }
 
     public cameBackFromGoingDown():boolean {
@@ -520,26 +596,42 @@ class YAIS implements IBaseClass {
 
             if (this.is_going_down_started) {
                 this.onScrollStartGoingDown.dispatch(evt);
+                this.start_scroll_down_handler(evt, this);
                 this.is_going_down_started = false;
             }
 
             if (this.cameBackFromGoingUp()) {
                 this.current_page += 3;
+
+                if (this.interval_going_up) {
+                    clearInterval(this.interval_going_up);
+                    this.onScrollFinishGoingUp.dispatch();
+                    this.finish_scroll_up_handler(evt, this);
+                }
+
             }
-            this.goingDown();
+            this.goingDown(evt);
             this.scrollDownHandler(evt);
         }
         else if (this.isGoingUp()) {
 
             if (this.is_going_up_started) {
                 this.onScrollStartGoingUp.dispatch(evt);
+                this.start_scroll_up_handler(evt, this);
                 this.is_going_up_started = false;
             }
 
             if (this.cameBackFromGoingDown()) {
                 this.current_page -= 3;
+
+                if (this.interval_going_down) {
+                    clearInterval(this.interval_going_down);
+                    this.onScrollFinishGoingDown.dispatch();
+                    this.finish_scroll_down_handler(evt, this);
+                }
+
             }
-            this.goingUp();
+            this.goingUp(evt);
             this.scrollUpHandler(evt);
         }
 
@@ -551,7 +643,7 @@ class YAIS implements IBaseClass {
 
             this.is_scroll_avaible = false;
 
-            this.scroll_down_handler(evt, this);
+            this.bottom_reached_handler(evt, this);
 
             this.current_page++;
             this.current_elem_height = this.container.offsetHeight;
@@ -560,7 +652,7 @@ class YAIS implements IBaseClass {
         }
     }
 
-    private defaultScrollDownHandler(evt:any, scope?:YAIS):void {
+    private defaultBottomReachedHandler(evt:any, scope?:YAIS):void {
         this.addElemsToBottom();
     }
 
@@ -569,7 +661,7 @@ class YAIS implements IBaseClass {
 
             this.is_scroll_avaible = false;
 
-            this.scroll_up_handler(evt, this);
+            this.top_reached_handler(evt, this);
 
             this.current_page--;
             this.current_elem_height = this.container.offsetHeight;
@@ -578,7 +670,7 @@ class YAIS implements IBaseClass {
         }
     }
 
-    private defaultScrollUpHandler(evt:any, scope?:YAIS):void {
+    private defaultTopReachedHandler(evt:any, scope?:YAIS):void {
         this.addElemsToTop();
     }
 

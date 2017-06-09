@@ -33,21 +33,37 @@ scroll_comp.setOptionNumber(Settings.BOTTOM_REACHED, 600);
 scroll_comp.setOptionNumber(Settings.TOP_REACHED, 600);
 
 class OnScrollListener extends AbsScrollListener {
-    public scrollUp(evt:any, yais:YAIS):void {
-        super.scrollUp(evt);
+    // TODO: these are events for top and bottom reached not scrolling
+    public topReached(evt:any, yais:YAIS):void {
+        super.topReached(evt);
         yais.addElemsToTop();
-        console.log("SCROLLUP!!!");
+        console.log("topReached!!!");
     }
-    public scrollDown(evt:any, yais:YAIS):void {
-        super.scrollDown(evt);
+    public bottomReached(evt:any, yais:YAIS):void {
+        super.bottomReached(evt);
         yais.addElemsToBottom();
         console.log("SCROLLDOWN!!!!!")
     }
 }
 
 scroll_comp.setOnScrollListener(new OnScrollListener());
-
 //scroll_comp.setOnScrollListener(null);
+
+scroll_comp.onScrollStartGoingDown.add(() => {
+    console.log("onScrollStartGoingDown");
+}, this);
+
+scroll_comp.onScrollStartGoingUp.add(() => {
+    console.log("onScrollStartGoingUp");
+}, this);
+
+scroll_comp.onScrollFinishGoingDown.add(() => {
+    console.log("onScrollFinishGoingDown");
+}, this);
+
+scroll_comp.onScrollFinishGoingUp.add(() => {
+    console.log("onScrollFinishGoingUp");
+}, this);
 
 scroll_comp.init();
 
