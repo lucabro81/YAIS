@@ -6,4 +6,4 @@ spec/**/*.js
 package
 .DS_Store
 dist/.DS_Store
-srct/.DS_Store
+src/.DS_Store
