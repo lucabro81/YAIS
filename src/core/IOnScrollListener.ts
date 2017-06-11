@@ -11,4 +11,6 @@ interface IOnScrollListener {
     scrollDown(evt:any, instance?:any):void;
     finishScrollDown(evt:any, instance?:any):void;
 
+    destroy():void;
+
 }

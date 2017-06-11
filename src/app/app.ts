@@ -2,6 +2,10 @@ import {YAIS} from "../core/YAIS";
 import {AbsScrollListener} from "../core/abs/AbsScrollListener";
 import {Settings} from "../core/Enums";
 
+////////////////////////////////////////////////////////////
+//////////////////// CREATE DATA SOURCE ////////////////////
+////////////////////////////////////////////////////////////
+
 function craeteString(l:number) {
     let str:string = '';
     while (l>0) {
@@ -12,14 +16,16 @@ function craeteString(l:number) {
     return str;
 }
 
-// Create data source
 let data_source:Array<string> = [];
-for (let i = 0; i < 50000; i++) {
+for (let i = 0; i < 170; i++) {
     let l:number = (Math.random() * 100) + 1;
     let str:any = '<strong>' + (i+1) + '</strong>' + ' - ' + craeteString(l);
     data_source.push(str);
 }
 
+///////////////////////////////////////////////////////////
+//////////////////// INIT LIST OPTIONS ////////////////////
+///////////////////////////////////////////////////////////
 
 let scroll_comp:YAIS;
 
@@ -32,8 +38,11 @@ scroll_comp.setOptionBoolean(Settings.LOOP, false);
 scroll_comp.setOptionNumber(Settings.BOTTOM_REACHED, 600);
 scroll_comp.setOptionNumber(Settings.TOP_REACHED, 600);
 
+//////////////////////////////////////////////////////////////////
+//////////////////// SET LISTENERS / HANDLERS ////////////////////
+//////////////////////////////////////////////////////////////////
+
 class OnScrollListener extends AbsScrollListener {
-    // TODO: these are events for top and bottom reached not scrolling
     public topReached(evt:any, yais:YAIS):void {
         super.topReached(evt);
         yais.addElemsToTop();
@@ -65,6 +74,14 @@ scroll_comp.onScrollFinishGoingUp.add(() => {
     console.log("onScrollFinishGoingUp");
 }, this);
 
+scroll_comp.onOutOfData.add(() => {
+    console.log("onOutOfData");
+}, this);
+
+//////////////////////////////////////////////////////////
+//////////////////// START ENGINES ON ////////////////////
+//////////////////////////////////////////////////////////
+
 scroll_comp.init();
 
-scroll_comp.setOnScrollEnabled(true);
+window['yais'] = scroll_comp;

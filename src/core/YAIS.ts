@@ -20,6 +20,7 @@ class YAIS implements IBaseClass {
     public onScrollStartGoingDown:Signal = new Signal();
     public onScrollGoingDown:Signal = new Signal();
     public onScrollFinishGoingDown:Signal = new Signal();
+    public onOutOfData:Signal = new Signal();
 
     public data:Array<any>;
     public template_item:Node;
@@ -34,18 +35,6 @@ class YAIS implements IBaseClass {
     private pages:number;
     private outer_container:HTMLElement;
     private handler:(evt:any) => void;
-    /*
-     topReached(evt:any, instance?:any):void;
-     bottomReached(evt:any, instance?:any):void;
-
-     startScrollUp(evt:any, instance?:any):void;
-     scrollUp(evt:any, instance?:any):void;
-     finishScrollUp(evt:any, instance?:any):void;
-
-     startScrollDown(evt:any, instance?:any):void;
-     scrollDown(evt:any, instance?:any):void;
-     finishScrollDown(evt:any, instance?:any):void;
-     */
     private top_reached_handler:(evt:any, scope?:YAIS) => void;
     private bottom_reached_handler:(evt:any, scope?:YAIS) => void;
     private start_scroll_up_handler:(evt:any, scope?:YAIS) => void;
@@ -62,13 +51,16 @@ class YAIS implements IBaseClass {
     private interval_going_down:number;
     private interval_going_up:number;
     private is_loop:boolean;
-    private is_scroll_enabled:boolean;
+    private is_scroll_up_enabled:boolean;
+    private is_scroll_down_enabled:boolean;
     private is_scroll_avaible:boolean;
     private is_debug_enabled:boolean;
     private is_going_down:boolean;
     private is_going_up:boolean;
     private is_going_down_started:boolean;
     private is_going_up_started:boolean;
+    private custom_listener_obj:IOnScrollListener;
+    private rest:number;
 
     constructor(is_debug_enabled:boolean = false) {
 
@@ -105,14 +97,17 @@ class YAIS implements IBaseClass {
         this.interval_going_down = 0;
         this.interval_going_up = 0;
         this.is_loop = false;
-        this.is_scroll_enabled = false;
+        this.is_scroll_up_enabled = false;
+        this.is_scroll_down_enabled = false;
         this.is_scroll_avaible = true;
         this.is_going_down = false;
         this.is_going_up = false;
         this.is_going_down_started = true;
         this.is_going_up_started = true;
+        this.custom_listener_obj = null;
+        this.rest = 0;
 
-        Log.d(this, "constructor", false);
+        //Log.d(this, "constructor", false);
     }
 
 ////////////////////////////////////////////////
@@ -121,7 +116,7 @@ class YAIS implements IBaseClass {
 
     public init() {
 
-        Log.d(this, "init", false);
+        //Log.d(this, "init", false);
 
         // Initialization error
         if (this.data.length === 0) {
@@ -158,11 +153,12 @@ class YAIS implements IBaseClass {
 
         this.initList();
         this.initParams();
-
+        this.setOnScrollEnabled(true, true);
     }
 
-    public setOnScrollEnabled(value:boolean) {
-        this.is_scroll_enabled = value;
+    public setOnScrollEnabled(value_up:boolean, value_down:boolean) {
+        this.is_scroll_up_enabled = value_up;
+        this.is_scroll_down_enabled = value_down;
     }
 
     public setOnScrollListener(listener:IOnScrollListener = null) {
@@ -404,6 +400,7 @@ class YAIS implements IBaseClass {
         this.is_going_down = false;
         this.is_going_up = true;
 
+        this.onScrollGoingUp.dispatch();
         this.scroll_up_handler(evt, this);
 
         if (this.interval_going_up) {
@@ -428,6 +425,7 @@ class YAIS implements IBaseClass {
         this.is_going_down = true;
         this.is_going_up = false;
 
+        this.onScrollGoingDown.dispatch();
         this.scroll_down_handler(evt, this);
 
         if (this.interval_going_down) {
@@ -440,6 +438,7 @@ class YAIS implements IBaseClass {
             this.interval_going_down = 0;
             this.is_going_down_started = true;
             this.onScrollFinishGoingDown.dispatch();
+            //this.setOnScrollEnabled(true, true);
             this.finish_scroll_down_handler(evt, this);
         }, 300);
     }
@@ -461,19 +460,36 @@ class YAIS implements IBaseClass {
     }
 
     public addElemsToBottom():void {
-        for (let i = this.items_per_page * this.current_page;
-             i < this.items_per_page * (this.current_page + 1);
+        this.setOnScrollEnabled(true, true);
+        for (let i = (this.items_per_page * this.current_page);
+             i < (this.items_per_page * (this.current_page + 1));
              i++) {
-            this.shiftNextItem(this.data[i]);
+            if (this.data[i]) {
+                this.shiftNextItem(this.data[i]);
+            }
+            else {
+                this.onOutOfData.dispatch();
+                this.setOnScrollEnabled(true, false);
+                this.rest = this.items_per_page * (this.current_page + 1) - i;
+                break;
+            }
         }
     }
 
     public addElemsToTop():void {
-        for (let i = (this.items_per_page * this.current_page) - 1;
+        this.setOnScrollEnabled(true, true);
+        for (let i = ((this.items_per_page * this.current_page) - this.rest) - 1;
              i >= this.items_per_page * (this.current_page - 1);
              i--) {
-            this.shiftPrevItem(this.data[i]);
+            if (this.data[i]) {
+                this.shiftPrevItem(this.data[i]);
+            }
+            else {
+                this.setOnScrollEnabled(false, true);
+                break;
+            }
         }
+        this.rest = 0;
     }
 
     public destroy():void {
@@ -506,10 +522,14 @@ class YAIS implements IBaseClass {
         this.current_elem_height = null;
 
         this.is_loop = null;
-        this.is_scroll_enabled = null;
+        this.is_scroll_up_enabled = null;
+        this.is_scroll_down_enabled = null;
         this.is_scroll_avaible = null;
         this.is_going_down = null;
         this.is_going_up = null;
+
+        this.custom_listener_obj.destroy();
+        this.custom_listener_obj = null;
 
         this.onScrollStartGoingUp.removeAll();
         this.onScrollGoingUp.removeAll();
@@ -517,6 +537,7 @@ class YAIS implements IBaseClass {
         this.onScrollStartGoingDown.removeAll();
         this.onScrollGoingDown.removeAll();
         this.onScrollFinishGoingDown.removeAll();
+        this.onOutOfData.removeAll();
     }
 
 /////////////////////////////////////////////////
@@ -546,9 +567,6 @@ class YAIS implements IBaseClass {
 
         this.ll = new LinkedList<ListElement>();
         this.ll.init(ListElement);
-
-        console.log("this.items_per_page", this.items_per_page);
-        console.log("this.items_per_page*3", (this.items_per_page*3));
 
         for (let i = 0; i < this.items_per_page*3; i++) {
             if (this.data[i]) {
@@ -592,7 +610,9 @@ class YAIS implements IBaseClass {
      */
     private onScrollEventHandler(evt:any) {
 
-        if (this.isGoingDown()) {
+        if (this.isGoingDown() && this.is_scroll_down_enabled) {
+
+            this.is_going_up_started = true;
 
             if (this.is_going_down_started) {
                 this.onScrollStartGoingDown.dispatch(evt);
@@ -613,7 +633,9 @@ class YAIS implements IBaseClass {
             this.goingDown(evt);
             this.scrollDownHandler(evt);
         }
-        else if (this.isGoingUp()) {
+        else if (this.isGoingUp() && this.is_scroll_up_enabled) {
+
+            this.is_going_down_started = true;
 
             if (this.is_going_up_started) {
                 this.onScrollStartGoingUp.dispatch(evt);
@@ -646,11 +668,12 @@ class YAIS implements IBaseClass {
             this.bottom_reached_handler(evt, this);
 
             this.current_page++;
+
             this.current_elem_height = this.container.offsetHeight;
 
             this.is_scroll_avaible = true;
         }
-    }
+}
 
     private defaultBottomReachedHandler(evt:any, scope?:YAIS):void {
         this.addElemsToBottom();
@@ -681,9 +704,9 @@ class YAIS implements IBaseClass {
      */
     private createScrollEventHandler(): (evt:any) => void {
         return (evt:any):void => {
-            if (this.is_scroll_enabled) {
+            //if (this.is_scroll_enabled) {
                 this.onScrollEventHandler(evt);
-            }
+            //}
         }
     }
 
