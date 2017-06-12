@@ -34,7 +34,7 @@ scroll_comp = new YAIS(true);
 scroll_comp.setOptionHTMLElement(Settings.CONTAINER, document.getElementById("infinite-scroll-cont"));
 scroll_comp.setOptionArray<string>(Settings.DATA, data_source);
 scroll_comp.setOptionNumber(Settings.ITEMS_PER_PAGE, 30);
-scroll_comp.setOptionBoolean(Settings.LOOP, false);
+scroll_comp.setOptionBoolean(Settings.LOOP, true);
 scroll_comp.setOptionNumber(Settings.BOTTOM_REACHED, 600);
 scroll_comp.setOptionNumber(Settings.TOP_REACHED, 600);
 

@@ -290,14 +290,6 @@ class YAIS implements IBaseClass {
         this.container.appendChild(this.ll.get().data);
     }
 
-    public addPagPrev() {
-
-    }
-
-    public addPagNext() {
-
-    }
-
     public shiftNextItem(data:any) {
         let node_to_reattach:Node = this.ll.start.data;
 
@@ -375,8 +367,16 @@ class YAIS implements IBaseClass {
 
     }
 
-    public enableLoop():void {
-        this.is_loop = true;
+    public enableLoop(enable:boolean):void {
+        this.is_loop = enable;
+        if (this.is_loop) {
+            if (!this.ll.isOuroborusActive()) {
+                this.ll.doOuroboros();
+            }
+        }
+        else {
+            this.ll.undoOuroboros();
+        }
     }
 
     public isLoopEnabled():boolean {
@@ -460,18 +460,40 @@ class YAIS implements IBaseClass {
     }
 
     public addElemsToBottom():void {
+
+        let is_out_of_data:boolean = false;
+
         this.setOnScrollEnabled(true, true);
-        for (let i = (this.items_per_page * this.current_page);
+        for (let i = (this.items_per_page * this.current_page) + this.rest;
              i < (this.items_per_page * (this.current_page + 1));
              i++) {
             if (this.data[i]) {
                 this.shiftNextItem(this.data[i]);
             }
             else {
-                this.onOutOfData.dispatch();
-                this.setOnScrollEnabled(true, false);
-                this.rest = this.items_per_page * (this.current_page + 1) - i;
-                break;
+                if (!is_out_of_data) {
+                    is_out_of_data = true;
+                    // numero massimo raggiungibile meno indice raggiunto
+                    this.rest = this.items_per_page * (this.current_page + 1) - i;
+                    this.onOutOfData.dispatch();
+                }
+                if (!this.is_loop) {
+                    this.setOnScrollEnabled(true, false);
+                    break;
+                }
+                else {
+                    // se siamo in loop stampo i restanti ripartendo da 0
+                    this.shiftNextItem(this.data[i - (this.data.length)]);
+                }
+            }
+        }
+
+        if (is_out_of_data) {
+            this.current_page = -1;
+        }
+        else {
+            if (this.is_loop) {
+                this.rest = 0;
             }
         }
     }
@@ -577,6 +599,10 @@ class YAIS implements IBaseClass {
                 break;
             }
         }
+
+        /*if (this.is_loop) {
+            this.ll.doOuroboros();
+        }*/
 
     }
 
