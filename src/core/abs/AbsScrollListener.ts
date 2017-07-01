@@ -1,6 +1,6 @@
 import {AbsListener} from "./AbsListener";
 
-export class AbsScrollListener extends AbsListener {
+export class AbsScrollListener extends AbsListener implements IOnScrollListener {
 
     constructor() {
         super();
@@ -16,4 +16,9 @@ export class AbsScrollListener extends AbsListener {
     public startScrollDown(evt:any, instance?:any):void {}
     public scrollDown(evt:any, instance?:any):void {}
     public finishScrollDown(evt:any, instance?:any):void {}
+
+    public destroy() {
+
+        super.destroy();
+    }
 }

@@ -5,6 +5,6 @@ export class AbsListener {
     }
 
     public destroy() {
-
+        
     }
 }

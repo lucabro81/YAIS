@@ -1,11 +1,16 @@
 import {YAIS} from "../core/YAIS";
 import {AbsScrollListener} from "../core/abs/AbsScrollListener";
-import {Settings} from "../core/Enums";
+import {Settings} from "../core/utils/Enums";
 
 ////////////////////////////////////////////////////////////
 //////////////////// CREATE DATA SOURCE ////////////////////
 ////////////////////////////////////////////////////////////
 
+/**
+ *
+ * @param l
+ * @returns {string}
+ */
 function craeteString(l:number) {
     let str:string = '';
     while (l>0) {
@@ -42,7 +47,7 @@ scroll_comp.setOptionNumber(Settings.TOP_REACHED, 600);
 //////////////////// SET LISTENERS / HANDLERS ////////////////////
 //////////////////////////////////////////////////////////////////
 
-class OnScrollListener extends AbsScrollListener {
+scroll_comp.setOnScrollListener(new class OnScrollListener extends AbsScrollListener {
     public topReached(evt:any, yais:YAIS):void {
         super.topReached(evt);
         yais.addElemsToTop();
@@ -53,9 +58,7 @@ class OnScrollListener extends AbsScrollListener {
         yais.addElemsToBottom();
         console.log("SCROLLDOWN!!!!!")
     }
-}
-
-scroll_comp.setOnScrollListener(new OnScrollListener());
+}());
 //scroll_comp.setOnScrollListener(null);
 
 scroll_comp.onScrollStartGoingDown.add(() => {

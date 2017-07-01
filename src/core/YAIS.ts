@@ -1,18 +1,13 @@
 import {LinkedList} from "lucabro-linked-list/package/LinkedList";
 import {ListElement} from "lucabro-linked-list/package/ListElement";
 
-import {IBaseClass} from "./IBaseClass";
-import {Log} from "./Log";
-
-import {ElemPosition, Settings} from "./Enums";
-import {Const} from "./Const";
+import {ElemPosition, Settings} from "./utils/Enums";
+import {Const} from "./utils/Const";
 
 import Events = Const.Events;
 import {Signal} from "signals";
 
-class YAIS implements IBaseClass {
-
-    public name:string = "YAIS";
+class YAIS {
 
     public onScrollStartGoingUp:Signal = new Signal();
     public onScrollGoingUp:Signal = new Signal();
@@ -106,8 +101,6 @@ class YAIS implements IBaseClass {
         this.is_going_up_started = true;
         this.custom_listener_obj = null;
         this.rest = 0;
-
-        //Log.d(this, "constructor", false);
     }
 
 ////////////////////////////////////////////////
@@ -115,8 +108,6 @@ class YAIS implements IBaseClass {
 ////////////////////////////////////////////////
 
     public init() {
-
-        //Log.d(this, "init", false);
 
         // Initialization error
         if (this.data.length === 0) {
@@ -173,6 +164,8 @@ class YAIS implements IBaseClass {
         this.start_scroll_down_handler = (listener) ? listener.startScrollDown : (evt:any, scope?:YAIS) => {};
         this.scroll_down_handler = (listener) ? listener.scrollDown : (evt:any, scope?:YAIS) => {};
         this.finish_scroll_down_handler = (listener) ? listener.finishScrollDown : (evt:any, scope?:YAIS) => {};
+
+        this.custom_listener_obj = listener;
 
         this.onScrollListener();
     }
@@ -385,7 +378,6 @@ class YAIS implements IBaseClass {
 
     public enableDebug(enable:boolean) {
         this.is_debug_enabled = enable;
-        Log.is_debug = this.is_debug_enabled;
     }
 
     public isDebugEnabled() {
@@ -551,6 +543,11 @@ class YAIS implements IBaseClass {
         this.is_going_up = null;
 
         this.custom_listener_obj.destroy();
+        for(let key in this.custom_listener_obj) {
+            if (this.custom_listener_obj.hasOwnProperty(key)) {
+                delete this.custom_listener_obj[key];
+            }
+        }
         this.custom_listener_obj = null;
 
         this.onScrollStartGoingUp.removeAll();
