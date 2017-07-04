@@ -54,8 +54,10 @@ class YAIS {
     private is_going_up:boolean;
     private is_going_down_started:boolean;
     private is_going_up_started:boolean;
+    private is_out_of_data:boolean;
     private custom_listener_obj:IOnScrollListener;
     private rest:number;
+    private max_page_number:number;
 
     constructor(is_debug_enabled:boolean = false) {
 
@@ -99,8 +101,10 @@ class YAIS {
         this.is_going_up = false;
         this.is_going_down_started = true;
         this.is_going_up_started = true;
+        this.is_out_of_data = false;
         this.custom_listener_obj = null;
         this.rest = 0;
+        this.max_page_number = 0;
     }
 
 ////////////////////////////////////////////////
@@ -141,6 +145,11 @@ class YAIS {
 
         // Init
         this.pages = 1; // TODO: verificare che serva a qualcosa
+        this.max_page_number = Math.ceil(this.data.length/this.items_per_page);
+        this.rest = this.data.length % this.items_per_page;
+
+        console.log("this.max_page_number", this.max_page_number);
+        console.log("this.rest", this.rest);
 
         this.initList();
         this.initParams();
@@ -444,29 +453,41 @@ class YAIS {
     }
 
     public bottomReached(offset:number):boolean {
-        return ((this.outer_container.scrollTop) > this.current_elem_height - offset);
+        return (((this.outer_container.scrollTop) > (this.current_elem_height - offset)) &&
+               ((this.current_page < this.max_page_number) || this.is_loop));
     }
 
     public topReached(offset:number):boolean {
-        return ((this.outer_container.scrollTop) < offset && this.current_page > 0);
+        //console.log("this.current_page", this.current_page);
+        return (((this.outer_container.scrollTop) < offset) && ((this.current_page > 0) || this.is_loop));
+        // return ((this.outer_container.scrollTop) < offset && (this.current_page > 0));
     }
 
     public addElemsToBottom():void {
 
-        let is_out_of_data:boolean = false;
+        console.log("this.current_page1", this.current_page);
+
+        /*//let is_out_of_data:boolean = false;
+        let local_rest:number = ((this.is_loop) && (this.is_out_of_data) && (this.rest > 0) && this.current_page === 0) ? (this.items_per_page - this.rest) : 0;
+        //let local_rest:number = 0;
+        this.is_out_of_data = false;
+
+        console.log("local_rest", local_rest);
+        console.log("this.is_out_of_data", this.is_out_of_data);
 
         this.setOnScrollEnabled(true, true);
-        for (let i = (this.items_per_page * this.current_page) + this.rest;
+        for (let i = (this.items_per_page * this.current_page) + local_rest;
              i < (this.items_per_page * (this.current_page + 1));
              i++) {
+            console.log("i", i);
             if (this.data[i]) {
                 this.shiftNextItem(this.data[i]);
             }
             else {
-                if (!is_out_of_data) {
-                    is_out_of_data = true;
+                if (!this.is_out_of_data) {
+                    this.is_out_of_data = true;
                     // numero massimo raggiungibile meno indice raggiunto
-                    this.rest = this.items_per_page * (this.current_page + 1) - i;
+                    //this.rest = this.items_per_page * (this.current_page + 1) - i;
                     this.onOutOfData.dispatch();
                 }
                 if (!this.is_loop) {
@@ -480,30 +501,54 @@ class YAIS {
             }
         }
 
-        if (is_out_of_data) {
-            this.current_page = -1;
-        }
-        else {
-            if (this.is_loop) {
-                this.rest = 0;
+        if (this.is_loop) {
+            if (this.is_out_of_data) {
+                // per poter ripartire da pagina 0
+                // this.current_page = -1;
+                this.current_page++;
             }
+            //else {
+                //this.rest = 0;
+            //}
         }
+
+        console.log("this.current_page2", this.current_page);*/
     }
 
     public addElemsToTop():void {
+
+        console.log("this.current_page", this.current_page);
+
         this.setOnScrollEnabled(true, true);
-        for (let i = ((this.items_per_page * this.current_page) - this.rest) - 1;
+
+        let local_rest:number = (this.is_out_of_data /*||((this.current_page === 0) && this.is_loop)*/) ? (this.items_per_page - this.rest) : 0;
+
+        console.log("local_rest", local_rest);
+        console.log("this.is_out_of_data", this.is_out_of_data);
+
+        for (let i = ((this.items_per_page * this.current_page) - local_rest) - 1;
              i >= this.items_per_page * (this.current_page - 1);
              i--) {
+
+            console.log("i", i);
             if (this.data[i]) {
                 this.shiftPrevItem(this.data[i]);
+
+                /*if (!this.is_loop) {
+                    this.setOnScrollEnabled(false, true);
+                    break;
+                }
+                else {
+                    this.shiftPrevItem(this.data[i]);
+                }*/
             }
             else {
-                this.setOnScrollEnabled(false, true);
-                break;
+
             }
         }
-        this.rest = 0;
+
+        //this.rest = 0;
+        this.is_out_of_data = false;
     }
 
     public destroy():void {
@@ -579,6 +624,11 @@ class YAIS {
             arr.pop();
         }
     }
+
+    private stigrancazzi(i:number):number {
+        return i - (this.data.length * Math.floor(i / this.data.length));
+    }
+
     /**
      *
      */
@@ -587,14 +637,45 @@ class YAIS {
         this.ll = new LinkedList<ListElement>();
         this.ll.init(ListElement);
 
-        for (let i = 0; i < this.items_per_page*3; i++) {
-            if (this.data[i]) {
-                this.ll.addElem(this.createElem(this.data[i]));
-                this.container.appendChild(this.ll.get().data);
+
+        /*for (let i = -20; i < this.items_per_page * 100; i++) {
+            console.log("stigrancazzi", this.stigrancazzi(i));
+        }*/
+
+
+        let offset:number = (this.rest > 0 && this.is_loop) ? this.rest - this.items_per_page : 0;
+
+
+        for (let i = offset; i < ((this.items_per_page * 4) + offset); i++) {
+            //if (this.data[i]) {
+
+            console.log("stigrancazzi", this.stigrancazzi(i));
+
+            let index:number = this.stigrancazzi(i);
+            let datum:any = this.data[index];
+
+
+            this.ll.addElem(this.createElem(datum));
+            this.container.appendChild(this.ll.get().data);
+
+            if (index === 0) {
+                let class_attr_value:string = this.container.lastElementChild.getAttribute('class');
+
+                if (class_attr_value) {
+                    class_attr_value += " " + "first";
+                }
+                else {
+                    class_attr_value = "first";
+                }
+
+                this.container.lastElementChild.setAttribute("class", class_attr_value);
             }
-            else {
-                break;
-            }
+
+        }
+
+        if (this.is_loop) {
+            var objControl: HTMLElement = <HTMLElement>document.getElementsByClassName("first")[0];
+            this.container.parentElement.scrollTop = objControl.offsetTop - this.container.offsetTop;
         }
 
         /*if (this.is_loop) {
@@ -690,7 +771,12 @@ class YAIS {
 
             this.bottom_reached_handler(evt, this);
 
-            this.current_page++;
+            if (this.current_page < this.max_page_number) {
+                this.current_page++;
+            }
+            else if (this.is_loop) {
+                this.current_page = 0;
+            }
 
             this.current_elem_height = this.container.offsetHeight;
 
@@ -703,13 +789,20 @@ class YAIS {
     }
 
     private scrollUpHandler(evt:any):void {
+        console.log("this.topReached(this.top_reached)", this.topReached(this.top_reached));
         if (this.topReached(this.top_reached) && (this.is_scroll_avaible)) {
 
             this.is_scroll_avaible = false;
 
             this.top_reached_handler(evt, this);
 
-            this.current_page--;
+            if (this.current_page > 0) {
+                this.current_page--;
+            }
+            else if (this.is_loop) {
+                this.current_page = this.max_page_number;
+            }
+
             this.current_elem_height = this.container.offsetHeight;
 
             this.is_scroll_avaible = true;
