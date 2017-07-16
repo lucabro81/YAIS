@@ -463,56 +463,73 @@ class YAIS {
         // return ((this.outer_container.scrollTop) < offset && (this.current_page > 0));
     }
 
+    public pageNumber(page:number):number {
+        return (page - (this.max_page_number * (Math.floor(page/this.max_page_number)))) +
+            (((page % this.max_page_number) === 0) ? 1 : 0) * this.max_page_number;
+    }
+
+    public localRestDown(page:number):number {
+        if (this.rest === 0) {
+            return 0;
+        }
+        return (this.items_per_page - this.rest) * (Math.ceil(page/this.max_page_number));
+    }
+
+    public localRestUp(page:number):number {
+        if (this.rest === 0) {
+            return 0;
+        }
+        return ((this.items_per_page - this.rest) * (Math.ceil(page/this.max_page_number)));
+    }
+
+    /**
+     *
+     */
     public addElemsToBottom():void {
 
-        console.log("this.current_page1", this.current_page);
-
-        /*//let is_out_of_data:boolean = false;
-        let local_rest:number = ((this.is_loop) && (this.is_out_of_data) && (this.rest > 0) && this.current_page === 0) ? (this.items_per_page - this.rest) : 0;
-        //let local_rest:number = 0;
-        this.is_out_of_data = false;
-
-        console.log("local_rest", local_rest);
-        console.log("this.is_out_of_data", this.is_out_of_data);
+        console.log("this.current_page", this.current_page);
 
         this.setOnScrollEnabled(true, true);
-        for (let i = (this.items_per_page * this.current_page) + local_rest;
-             i < (this.items_per_page * (this.current_page + 1));
-             i++) {
-            console.log("i", i);
-            if (this.data[i]) {
-                this.shiftNextItem(this.data[i]);
+
+        this.is_out_of_data = false;
+
+        if (this.is_loop) {
+
+            let local_rest:number = this.localRestDown(this.current_page);
+            let norm_current_page:number = this.pageNumber(this.current_page);
+
+            console.log("norm_current_page", norm_current_page);
+            console.log("local_rest", local_rest);
+
+            let index:number = 0;
+            for (let i = (this.items_per_page * norm_current_page) + local_rest;
+                 i < (this.items_per_page * (norm_current_page + 1)) + local_rest;
+                 i++) {
+                index = (this.data[i]) ? i : i - (this.data.length);
+                this.shiftNextItem(this.data[index]);
             }
-            else {
-                if (!this.is_out_of_data) {
-                    this.is_out_of_data = true;
-                    // numero massimo raggiungibile meno indice raggiunto
-                    //this.rest = this.items_per_page * (this.current_page + 1) - i;
-                    this.onOutOfData.dispatch();
+
+        }
+        else {
+
+            for (let i = (this.items_per_page * this.current_page);
+                 i < (this.items_per_page * (this.current_page + 1));
+                 i++) {
+                if (this.data[i]) {
+                    this.shiftNextItem(this.data[i]);
                 }
-                if (!this.is_loop) {
+                else {
+                    if (!this.is_out_of_data) {
+                        this.is_out_of_data = true;
+                        this.onOutOfData.dispatch();
+                    }
+
                     this.setOnScrollEnabled(true, false);
                     break;
                 }
-                else {
-                    // se siamo in loop stampo i restanti ripartendo da 0
-                    this.shiftNextItem(this.data[i - (this.data.length)]);
-                }
             }
         }
 
-        if (this.is_loop) {
-            if (this.is_out_of_data) {
-                // per poter ripartire da pagina 0
-                // this.current_page = -1;
-                this.current_page++;
-            }
-            //else {
-                //this.rest = 0;
-            //}
-        }
-
-        console.log("this.current_page2", this.current_page);*/
     }
 
     public addElemsToTop():void {
@@ -521,7 +538,42 @@ class YAIS {
 
         this.setOnScrollEnabled(true, true);
 
-        let local_rest:number = (this.is_out_of_data /*||((this.current_page === 0) && this.is_loop)*/) ? (this.items_per_page - this.rest) : 0;
+        if (this.is_loop) {
+
+            let local_rest:number = this.localRestUp(this.current_page);
+            let norm_current_page:number = this.pageNumber(this.current_page);
+
+            console.log("norm_current_page", norm_current_page);
+            console.log("local_rest", local_rest);
+
+            let index:number = 0;
+            for (let i = ((this.items_per_page * norm_current_page) - local_rest) - 1;
+                 i >= this.items_per_page * (norm_current_page - 1) - local_rest;
+                 i--) {
+                console.log("i", i);
+                this.shiftPrevItem(this.data[i]);
+
+            }
+
+            //this.setOnScrollEnabled(false, false);
+        }
+        else {
+
+            let local_rest:number = (this.is_out_of_data) ? (this.items_per_page - this.rest) : 0;
+
+            for (let i = ((this.items_per_page * this.current_page) - local_rest) - 1;
+                 i >= this.items_per_page * (this.current_page - 1);
+                 i--) {
+                this.shiftPrevItem(this.data[i]);
+            }
+
+        }
+
+        this.is_out_of_data = false;
+
+         /*this.setOnScrollEnabled(true, true);
+
+        let local_rest:number = (this.is_out_of_data ) ? (this.items_per_page - this.rest) : 0;
 
         console.log("local_rest", local_rest);
         console.log("this.is_out_of_data", this.is_out_of_data);
@@ -534,13 +586,7 @@ class YAIS {
             if (this.data[i]) {
                 this.shiftPrevItem(this.data[i]);
 
-                /*if (!this.is_loop) {
-                    this.setOnScrollEnabled(false, true);
-                    break;
-                }
-                else {
-                    this.shiftPrevItem(this.data[i]);
-                }*/
+
             }
             else {
 
@@ -548,7 +594,7 @@ class YAIS {
         }
 
         //this.rest = 0;
-        this.is_out_of_data = false;
+        this.is_out_of_data = false;*/
     }
 
     public destroy():void {
@@ -625,7 +671,12 @@ class YAIS {
         }
     }
 
-    private stigrancazzi(i:number):number {
+    /**
+     *
+     * @param i
+     * @returns {number}
+     */
+    private dataIndex(i:number):number {
         return i - (this.data.length * Math.floor(i / this.data.length));
     }
 
@@ -637,35 +688,30 @@ class YAIS {
         this.ll = new LinkedList<ListElement>();
         this.ll.init(ListElement);
 
+        let init_number_page:number = 3;
+        let offset:number = (this.rest > 0 && this.is_loop) ? - (this.items_per_page * init_number_page) : 0;
 
-        /*for (let i = -20; i < this.items_per_page * 100; i++) {
-            console.log("stigrancazzi", this.stigrancazzi(i));
+        /*if (this.is_loop) {
+            init_number_page = 3;
         }*/
+        let init_number_elems:number = (this.items_per_page * init_number_page);
 
+        for (let i = offset; i < init_number_elems; i++) {
 
-        let offset:number = (this.rest > 0 && this.is_loop) ? this.rest - this.items_per_page : 0;
-
-
-        for (let i = offset; i < ((this.items_per_page * 4) + offset); i++) {
-            //if (this.data[i]) {
-
-            console.log("stigrancazzi", this.stigrancazzi(i));
-
-            let index:number = this.stigrancazzi(i);
-            let datum:any = this.data[index];
-
+            let data_index:number = this.dataIndex(i);
+            let datum:any = this.data[data_index];
 
             this.ll.addElem(this.createElem(datum));
             this.container.appendChild(this.ll.get().data);
 
-            if (index === 0) {
+            if (data_index === 0) {
                 let class_attr_value:string = this.container.lastElementChild.getAttribute('class');
 
                 if (class_attr_value) {
-                    class_attr_value += " " + "first";
+                    class_attr_value += " " + Const.Classes.FIRST_CLASS_ELEM;
                 }
                 else {
-                    class_attr_value = "first";
+                    class_attr_value = Const.Classes.FIRST_CLASS_ELEM;
                 }
 
                 this.container.lastElementChild.setAttribute("class", class_attr_value);
@@ -674,13 +720,9 @@ class YAIS {
         }
 
         if (this.is_loop) {
-            var objControl: HTMLElement = <HTMLElement>document.getElementsByClassName("first")[0];
+            let objControl:HTMLElement = <HTMLElement>document.getElementsByClassName(Const.Classes.FIRST_CLASS_ELEM)[0];
             this.container.parentElement.scrollTop = objControl.offsetTop - this.container.offsetTop;
         }
-
-        /*if (this.is_loop) {
-            this.ll.doOuroboros();
-        }*/
 
     }
 
@@ -750,6 +792,10 @@ class YAIS {
             if (this.cameBackFromGoingDown()) {
                 this.current_page -= 3;
 
+                if (this.current_page === 0) {
+                    this.current_page = this.max_page_number;
+                }
+
                 if (this.interval_going_down) {
                     clearInterval(this.interval_going_down);
                     this.onScrollFinishGoingDown.dispatch();
@@ -771,12 +817,14 @@ class YAIS {
 
             this.bottom_reached_handler(evt, this);
 
-            if (this.current_page < this.max_page_number) {
+            /*if (this.current_page < this.max_page_number) {
                 this.current_page++;
             }
             else if (this.is_loop) {
-                this.current_page = 0;
-            }
+                this.current_page = 1;
+            }*/
+
+            this.current_page++;
 
             this.current_elem_height = this.container.offsetHeight;
 
@@ -796,11 +844,17 @@ class YAIS {
 
             this.top_reached_handler(evt, this);
 
-            if (this.current_page > 0) {
+            /*if (this.current_page > 0) {
                 this.current_page--;
             }
             else if (this.is_loop) {
                 this.current_page = this.max_page_number;
+            }*/
+
+            this.current_page--;
+
+            if (this.current_page === 0) {
+                this.current_page = -1;
             }
 
             this.current_elem_height = this.container.offsetHeight;

@@ -1,4 +1,9 @@
 export namespace Const {
+
+    export class Classes {
+        static FIRST_CLASS_ELEM:string = "first";
+    }
+
     export class Events {
         static SCROLL_EVENT:string = "scroll";
 
@@ -9,6 +14,5 @@ export namespace Const {
         static SCROLL_EVENT_START_GOING_DOWN:string = "scroll.start.going.down";
         static SCROLL_EVENT_GOING_DOWN:string = "scroll.going.down";
         static SCROLL_EVENT_FINISH_GOING_DOWN:string = "scroll.finish.going.down";
-
     }
 }
