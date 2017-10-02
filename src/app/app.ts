@@ -1,6 +1,6 @@
 import {YAIS} from "../core/YAIS";
-import {AbsScrollListener} from "../core/abs/AbsScrollListener";
-import {Settings} from "../core/utils/Enums";
+import {Settings} from "../core/system/utils/Enums";
+import {OnScrollListener} from "../core/system/abs/OnScrollListener";
 
 ////////////////////////////////////////////////////////////
 //////////////////// CREATE DATA SOURCE ////////////////////
@@ -47,18 +47,26 @@ scroll_comp.setOptionNumber(Settings.TOP_REACHED, 600);
 //////////////////// SET LISTENERS / HANDLERS ////////////////////
 //////////////////////////////////////////////////////////////////
 
-scroll_comp.setOnScrollListener(new class OnScrollListener extends AbsScrollListener {
+scroll_comp.setOnScrollListener(new class extends OnScrollListener {
+
     public topReached(evt:any, yais:YAIS):void {
-        super.topReached(evt);
+        super.topReached(evt, yais);
         yais.addElemsToTop();
         console.log("topReached!!!");
     }
+
     public bottomReached(evt:any, yais:YAIS):void {
-        super.bottomReached(evt);
+        super.bottomReached(evt, yais);
         yais.addElemsToBottom();
-        console.log("SCROLLDOWN!!!!!")
+        console.log("bottomReached!!!!!")
     }
-}());
+
+    public startScrollDown(evt:any, yais:YAIS):void {
+        super.startScrollDown(evt, yais);
+        console.log("SCROLLDOWN!!!!!");
+    }
+
+});
 //scroll_comp.setOnScrollListener(null);
 
 scroll_comp.onScrollStartGoingDown.add(() => {

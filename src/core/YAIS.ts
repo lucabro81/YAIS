@@ -1,11 +1,13 @@
 import {LinkedList} from "lucabro-linked-list/package/LinkedList";
 import {ListElement} from "lucabro-linked-list/package/ListElement";
 
-import {ElemPosition, Settings} from "./utils/Enums";
-import {Const} from "./utils/Const";
+import {ElemPosition, Settings} from "./system/utils/Enums";
+import {Const} from "./system/utils/Const";
 
 import Events = Const.Events;
 import {Signal} from "signals";
+import construct = Reflect.construct;
+import {OnScrollListener} from "./interfaces/OnScrollListener";
 
 class YAIS {
 
@@ -55,7 +57,7 @@ class YAIS {
     private is_going_down_started:boolean;
     private is_going_up_started:boolean;
     private is_out_of_data:boolean;
-    private custom_listener_obj:IOnScrollListener;
+    private custom_listener_obj:OnScrollListener;
     private rest:number;
     private max_page_number:number;
 
@@ -161,19 +163,39 @@ class YAIS {
         this.is_scroll_down_enabled = value_down;
     }
 
-    public setOnScrollListener(listener:IOnScrollListener = null) {
+    public setOnScrollListener(diocane:OnScrollListener = null) {
 
-        this.top_reached_handler = (listener) ? listener.topReached : this.defaultTopReachedHandler;
-        this.bottom_reached_handler = (listener) ? listener.bottomReached : this.defaultBottomReachedHandler;
+        let listener: OnScrollListener = null;
+        //let diocane:any = new c();
 
-        this.start_scroll_up_handler = (listener) ? listener.startScrollUp : (evt:any, scope?:YAIS) => {};
-        this.scroll_up_handler = (listener) ? listener.scrollUp : (evt:any, scope?:YAIS) => {};
-        this.finish_scroll_up_handler = (listener) ? listener.finishScrollUp : (evt:any, scope?:YAIS) => {};
 
-        this.start_scroll_down_handler = (listener) ? listener.startScrollDown : (evt:any, scope?:YAIS) => {};
-        this.scroll_down_handler = (listener) ? listener.scrollDown : (evt:any, scope?:YAIS) => {};
-        this.finish_scroll_down_handler = (listener) ? listener.finishScrollDown : (evt:any, scope?:YAIS) => {};
+        //if (c) {
+        //    listener = new AbsScrollListener(diocane);
+        //}
 
+        listener = diocane;
+
+        console.log("listener", listener);
+        console.log("**** STO PER ESEGUIRE startScrollDown ****");
+        listener.startScrollDown("asd", this);
+        console.log("**** FINITO DI ESEGUIRE startScrollDown ****");
+        console.log("diocane", diocane);
+
+        this.top_reached_handler = (listener.topReached) ? listener.topReached : this.defaultTopReachedHandler;
+        this.bottom_reached_handler = (listener.bottomReached) ? listener.bottomReached : this.defaultBottomReachedHandler;
+
+        this.start_scroll_up_handler = (listener.startScrollUp) ? listener.startScrollUp : (evt:any, scope?:YAIS) => {};
+        this.scroll_up_handler = (listener.scrollUp) ? listener.scrollUp : (evt:any, scope?:YAIS) => {};
+        this.finish_scroll_up_handler = (listener.finishScrollUp) ? listener.finishScrollUp : (evt:any, scope?:YAIS) => {};
+
+        this.start_scroll_down_handler = (listener.startScrollDown) ? listener.startScrollDown : (evt:any, scope?:YAIS) => {};
+        this.scroll_down_handler = (listener.scrollDown) ? listener.scrollDown : (evt:any, scope?:YAIS) => {};
+
+        this.finish_scroll_down_handler = (listener.finishScrollDown) ? listener.finishScrollDown : (evt:any, scope?:YAIS) => {};
+
+        console.log("**** STO PER ESEGUIRE startScrollDown ****");
+        this.start_scroll_down_handler("asd", this);
+        console.log("**** FINITO DI ESEGUIRE startScrollDown ****");
         this.custom_listener_obj = listener;
 
         this.onScrollListener();
